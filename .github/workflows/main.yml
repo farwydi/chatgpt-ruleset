@@ -6,13 +6,16 @@ on:
     paths:
       - "sources/**"
       - "scripts/**"
-      - ".github/workflows/build.yml"
+      - ".github/workflows/main.yml"
   pull_request:
     paths:
       - "sources/**"
       - "scripts/**"
-      - ".github/workflows/build.yml"
+      - ".github/workflows/main.yml"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -40,9 +43,37 @@ jobs:
       - name: Build rule-sets
         run: python3 scripts/build_ruleset.py
 
-      - name: Upload artifacts
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: singbox-ruleset
           path: dist/
           if-no-files-found: error
+
+      - name: Publish rolling `latest` release
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest rule-sets
+          body: |
+            Automatically rebuilt sing-box rule-sets.
+
+            Stable download URLs (always point to the most recent build):
+
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt.srs
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt-domains.srs
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt-ips.srs
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt.json
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt-domains.json
+            - https://github.com/${{ github.repository }}/releases/latest/download/chatgpt-ips.json
+
+            Built from commit ${{ github.sha }}.
+          files: |
+            dist/chatgpt.srs
+            dist/chatgpt-domains.srs
+            dist/chatgpt-ips.srs
+            dist/chatgpt.json
+            dist/chatgpt-domains.json
+            dist/chatgpt-ips.json
+          make_latest: "true"

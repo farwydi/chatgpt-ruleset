@@ -1,0 +1,10 @@
+# ChatGPT / OpenAI IP ranges
+# One CIDR per line. Bare IPs are accepted and converted to /32 (v4) or /128 (v6).
+# Lines starting with `#` and blank lines are ignored.
+
+# IPv4 examples (replace with your own list)
+24.199.123.28/32
+172.66.0.0/20
+
+# IPv6 examples
+2606:4700::/32

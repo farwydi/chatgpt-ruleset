@@ -1,0 +1,30 @@
+# ChatGPT / OpenAI domains
+# One entry per line. Lines starting with `#` and blank lines are ignored.
+#
+# Prefix syntax (optional, auto-detected if omitted):
+#   full:example.com        -> exact-match domain
+#   suffix:example.com      -> matches example.com and *.example.com
+#   keyword:openai          -> substring match
+#   regex:^chat-.*\.com$    -> regular expression
+#
+# Without a prefix, an entry starting with `.` becomes a suffix match,
+# anything containing `*` becomes a regex, and the rest is treated as
+# a domain_suffix (covers the apex and all subdomains).
+
+openai.com
+chatgpt.com
+oaistatic.com
+oaiusercontent.com
+sora.com
+
+# narrower hosts (auto -> domain_suffix)
+auth.openai.com
+auth0.openai.com
+ab.chatgpt.com
+cdn.oaistatic.com
+files.oaiusercontent.com
+
+# example of explicit forms (kept commented out by default)
+# full:platform.openai.com
+# keyword:openai
+# regex:^chat[a-z0-9-]*\.openai\.com$

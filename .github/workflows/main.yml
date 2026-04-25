@@ -1,0 +1,48 @@
+name: build-ruleset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sources/**"
+      - "scripts/**"
+      - ".github/workflows/build.yml"
+  pull_request:
+    paths:
+      - "sources/**"
+      - "scripts/**"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install sing-box
+        run: |
+          set -euo pipefail
+          version="$(curl -fsSL https://api.github.com/repos/SagerNet/sing-box/releases/latest \
+            | grep -oP '"tag_name":\s*"\Kv[^"]+' | head -n1)"
+          ver="${version#v}"
+          tarball="sing-box-${ver}-linux-amd64.tar.gz"
+          curl -fsSL -o sing-box.tgz \
+            "https://github.com/SagerNet/sing-box/releases/download/${version}/${tarball}"
+          tar -xzf sing-box.tgz
+          sudo install -m 0755 "sing-box-${ver}-linux-amd64/sing-box" /usr/local/bin/sing-box
+          sing-box version
+
+      - name: Build rule-sets
+        run: python3 scripts/build_ruleset.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: singbox-ruleset
+          path: dist/
+          if-no-files-found: error

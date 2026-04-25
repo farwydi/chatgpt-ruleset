@@ -59,17 +59,58 @@ matches the apex **and** every subdomain.
 One entry per line. Bare IPv4/IPv6 addresses are normalized to `/32` and `/128`.
 Comments start with `#`.
 
-## Using the artifact in sing-box
+## Stable download URLs
+
+Each push to `main` reruns `.github/workflows/main.yml`, which:
+
+1. Installs `sing-box`, regenerates the JSON rule-sets, and compiles `.srs`.
+2. Uploads `dist/` as a workflow run artifact (handy for inspecting a single run).
+3. Republishes the rolling **`latest`** GitHub Release with the freshly built
+   files attached. The tag `latest` is force-moved to the new commit, and the
+   release is marked as the repository's latest, so the URLs below never change:
+
+   | file                   | URL                                                                                         |
+   | ---------------------- | ------------------------------------------------------------------------------------------- |
+   | combined `.srs`        | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt.srs`                    |
+   | domains-only `.srs`    | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt-domains.srs`            |
+   | ips-only `.srs`        | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt-ips.srs`                |
+   | combined source JSON   | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt.json`                   |
+   | domains source JSON    | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt-domains.json`           |
+   | ips source JSON        | `https://github.com/<owner>/<repo>/releases/latest/download/chatgpt-ips.json`               |
+
+   GitHub resolves `/releases/latest/download/<file>` to whichever release is
+   marked latest, so you can paste these URLs straight into your sing-box
+   config and they keep returning the most recent build.
+
+### How the auto-publish is wired up
+
+- The workflow declares `permissions: contents: write` so the default
+  `GITHUB_TOKEN` can create/update releases — no PAT or extra secret needed.
+- `softprops/action-gh-release@v2` upserts the release: it moves the `latest`
+  tag to the current commit, replaces the attached files, and re-marks the
+  release as latest (`make_latest: "true"`).
+- Pull requests build but skip the publish step (`if: github.event_name != 'pull_request'`),
+  so forks/PRs can still validate without touching releases.
+- To trigger a rebuild without changing the inputs, open
+  **Actions → build-ruleset → Run workflow** (`workflow_dispatch`).
+- After the first successful run on `main`, the rolling release page lives at
+  `https://github.com/<owner>/<repo>/releases/tag/latest`.
+
+### Using the rolling release in sing-box
+
+Remote rule-set (recommended — sing-box re-fetches on `update_interval`):
 
 ```json
 {
   "route": {
     "rule_set": [
       {
-        "type": "local",
+        "type": "remote",
         "tag": "chatgpt",
         "format": "binary",
-        "path": "chatgpt.srs"
+        "url": "https://github.com/<owner>/<repo>/releases/latest/download/chatgpt.srs",
+        "download_detour": "direct",
+        "update_interval": "24h"
       }
     ],
     "rules": [
@@ -79,12 +120,13 @@ Comments start with `#`.
 }
 ```
 
-For remote use, host the `.srs` file (or the `.json` source with
-`"format": "source"`) and reference it via `"type": "remote"`.
+Or download manually and use as a local rule-set:
 
-## CI
-
-A GitHub Actions workflow that rebuilds the rule-sets on every push and
-uploads `dist/` as an artifact can be added at `.github/workflows/build.yml`
-(the file is intentionally not committed here so the repo can be pushed with
-a token that lacks the `workflow` scope).
+```json
+{
+  "type": "local",
+  "tag": "chatgpt",
+  "format": "binary",
+  "path": "chatgpt.srs"
+}
+```

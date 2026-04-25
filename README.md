@@ -1,2 +1,2 @@
 # chatgpt-ruleset
-sping-box ruel set for chatgpt
+sing-box rule set for chatgpt
